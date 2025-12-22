@@ -1,0 +1,13 @@
+gateway-helm:
+  enabled: true
+  config:
+    envoyGateway:
+      logging:
+        level:
+          default: debug
+  service:
+    annotations:
+      lb: orbstack
+
+# Hostname for Gateway/HTTPRoute and TLS validation
+host: "www.example.com"
