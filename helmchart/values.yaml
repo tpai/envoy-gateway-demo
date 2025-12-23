@@ -1,0 +1,27 @@
+gateway-helm:
+  enabled: true
+  config:
+    envoyGateway:
+      logging:
+        level:
+          default: debug
+  service:
+    annotations:
+      lb: orbstack
+
+# Hostname for Gateway/HTTPRoute and TLS validation
+host:
+  web: "www.example.com"
+  api: "api.example.com"
+  scheme: "https"
+
+auth:
+  image:
+    repository: jwt-auth-app
+    tag: latest
+  issuer: "auth.example.com"
+  audience: "private-api.example.com"
+  jwt_secret: "change-me-in-prod"
+  login_url: "https://www.example.com/login"
+  cors_allowed_origins:
+    - "https://www.example.com"

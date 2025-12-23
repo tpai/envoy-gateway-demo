@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
+    .card { max-width: 720px; margin: 8vh auto; padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: .5rem; }
+    .row { margin-top: .75rem; display: flex; gap: .5rem; }
+    input { width: 100%; padding: .5rem .6rem; border: 1px solid #d1d5db; border-radius: .375rem; }
+    button { padding: .55rem .9rem; border: 0; border-radius: .375rem; background: #111827; color: #fff; cursor: pointer; }
+    small { color: #6b7280; }
+    a { color: #2563eb; }
+    .btn { padding: .55rem .9rem; border: 0; border-radius: .375rem; background: #111827; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Login</h1>
+    <p><small>Enter admin/admin. Calls /api/login to get JWT and sets cookie.</small></p>
+    <form id="login-form">
+      <div class="row">
+        <input id="username" name="username" placeholder="Username" autocomplete="username" required />
+      </div>
+      <div class="row">
+        <input id="password" type="password" name="password" placeholder="Password" autocomplete="current-password" required />
+      </div>
+      <div class="row">
+        <button type="submit" class="btn">Sign in</button>
+        <button id="logout" class="btn" style="background:#9b1c1c; display:none;">Logout</button>
+      </div>
+      <div class="row">
+        <small id="error" style="color:#b91c1c; display:none;"></small>
+      </div>
+    </form>
+    <ul>
+      <li><a href="/">/</a></li>
+      <li><a href="/login">/login</a></li>
+      <li><a href="/private">/private</a></li>
+    </ul>
+  </div>
+  <script>
+    window.API_BASE = window.API_BASE || '{{API_BASE}}';
+    // Call backend /api/login and set JWT cookie
+    const COOKIE_NAME = 'access_token';
+
+    function setCookie(name, value, minutes) {
+      const params = new URLSearchParams(location.search);
+      const secure = location.protocol === 'https:';
+      const domain = undefined; // keep host-only cookie
+      const expires = new Date(Date.now() + minutes * 60 * 1000).toUTCString();
+      let cookie = `${name}=${encodeURIComponent(value)}; Path=/; Expires=${expires}; SameSite=Lax`;
+      if (secure) cookie += '; Secure';
+      if (domain) cookie += `; Domain=${domain}`;
+      document.cookie = cookie;
+    }
+
+    async function login(username, password) {
+      const res = await fetch((window.API_BASE || '') + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = data.error || `Login failed (${res.status})`;
+        throw new Error(msg);
+      }
+      return res.json();
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('error');
+      err.style.display = 'none';
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      try {
+        const data = await login(username, password);
+        setCookie(COOKIE_NAME, data.access_token, data.expires_in_minutes || 30);
+        const redirectTo = new URLSearchParams(location.search).get('next') || '/';
+        location.replace(redirectTo);
+      } catch (e2) {
+        err.textContent = e2.message || 'Login failed';
+        err.style.display = 'block';
+      }
+    });
+
+    // Helper to read cookie value and toggle logout visibility
+    function getCookie(name) {
+      return document.cookie.split('; ').map(v => v.trim()).reduce((acc, cur) => {
+        const [k, ...rest] = cur.split('=');
+        acc[k] = rest.join('=');
+        return acc;
+      }, {})[name];
+    }
+    (function showLogoutIfLoggedIn() {
+      const token = getCookie(COOKIE_NAME);
+      const logoutEl = document.getElementById('logout');
+      if (logoutEl) logoutEl.style.display = token ? 'inline-block' : 'none';
+    })();
+
+    // Logout button behavior copied from private.html
+    document.getElementById('logout').addEventListener('click', () => {
+      document.cookie = `${COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      location.reload();
+    });
+  </script>
+</body>
+</html>

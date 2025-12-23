@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Public Area</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
+    .card { max-width: 720px; margin: 8vh auto; padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: .5rem; }
+    a { color: #2563eb; }
+    .muted { color: #6b7280; }
+    .btn { padding: .55rem .9rem; border: 0; border-radius: .375rem; background: #111827; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Public Area</h1>
+    <p class="muted">This page calls <code>/api/public</code>.</p>
+    <h3>API Response</h3>
+    <pre id="out">(calling on load...)</pre>
+    <ul>
+      <li><a href="/">/</a></li>
+      <li><a href="/login">/login</a></li>
+      <li><a href="/private">/private</a></li>
+    </ul>
+  </div>
+  <script>
+    window.API_BASE = window.API_BASE || '{{API_BASE}}';
+    async function callPublic() {
+      const out = document.getElementById('out');
+      out.textContent = 'Loading...';
+      try {
+        const res = await fetch(window.API_BASE + '/api/public');
+        const txt = await res.text();
+        out.textContent = txt;
+      } catch (e) {
+        out.textContent = 'Request failed: ' + e;
+      }
+    }
+    // Call public API immediately on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Slight timeout to ensure DOM painted
+      setTimeout(callPublic, 0);
+    });
+  </script>
+ </body>
+ </html>
