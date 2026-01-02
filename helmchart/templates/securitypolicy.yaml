@@ -4,9 +4,9 @@ metadata:
   name: jwt-auth
 spec:
   targetRefs:
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: backend-private
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: backend-private
   extAuth:
     http:
       backendRefs:
@@ -14,3 +14,20 @@ spec:
           port: 8000
       path: /api/auth?next=
       headersToBackend: ["Authorization"]
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: whitelist
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: backend
+  authorization:
+    defaultAction: Deny
+    rules:
+    - action: Allow
+      principal:
+        clientCIDRs:
+        - 192.168.194.1/32

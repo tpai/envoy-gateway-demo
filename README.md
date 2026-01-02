@@ -16,11 +16,13 @@ A minimal example run behind Envoy Gateway showing features like TLS integration
 - Chart deployment [Helm](https://helm.sh/docs/intro/install/#through-package-managers)
 
 ## Quick Start
-1. Install demo CA cert on your laptop:
+1. Install local CA and generate certs on your laptop:
    - `mkcert -install`
+   - `mkcert www.example.com api.example.com`
+   - `mv www.example.com* helmcharts/files`
 2. Ensure the active Kubernetes cluster is the correct one:
    - `kubectl config current-context`
 3. Install/upgrade the chart:
-   - `helm upgrade --install envoy-gateway ./helmchart -f ./helmchart/values.yaml -n envoy-gateway`
+   - `helm upgrade --install eg ./helmchart -f ./helmchart/values.yaml -n eg --create-namespace`
 4. Edit `/etc/hosts` and append `127.0.0.1 www.example.com api.example.com`.
 5. Visit `https://www.example.com`.
