@@ -1,53 +1,41 @@
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: frontend
-spec:
-  parentRefs:
-    - name: gateway
-  hostnames:
-    - {{ .Values.host.web }}
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: frontend
-          port: 8000
+{{- range $r := .Values.httproutes.rules }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: backend-private
+  name: {{ $r.name }}
 spec:
   parentRefs:
-    - name: gateway
+    - name: {{ $.Values.gateway.namespace }}-gateway
+      namespace: {{ $.Values.gateway.namespace }}
   hostnames:
-    - {{ .Values.host.web }}
+    {{- range $hostname := $r.hostnames }}
+    - {{ $hostname | quote }}
+    {{- end }}
   rules:
+    {{- range $rule := $r.rules }}
     - matches:
+        {{- range $m := $rule.matches }}
         - path:
-            type: PathPrefix
-            value: /api/private
+            type: {{ $m.type }}
+            value: {{ $m.value | quote }}
+        {{- end }}
       backendRefs:
-        - name: frontend
-          port: 8000
+        - name: {{ $rule.backend.name }}
+          port: {{ $rule.backend.port }}
+    {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+kind: BackendTLSPolicy
 metadata:
-  name: backend
+  name: {{ $r.name }}
 spec:
-  parentRefs:
-    - name: gateway
-  hostnames:
-    - {{ .Values.host.api }}
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: backend
-          port: 8000
+  targetRefs:
+    - group: {{ $r.name }}
+      kind: Service
+      name: {{ $r.name }}
+      sectionName: https
+  validation:
+    hostname: {{ index $r.hostnames 0 | quote }}
+    wellKnownCACertificates: "System"
+{{- end }}

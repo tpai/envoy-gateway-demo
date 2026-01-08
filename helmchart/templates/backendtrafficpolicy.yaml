@@ -7,6 +7,9 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: frontend
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: backend
   rateLimit:
     global:
       rules:

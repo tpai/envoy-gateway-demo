@@ -1,55 +1,99 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: gateway
+  name: {{ .Values.gateway.namespace }}-gateway
+  namespace: {{ .Values.gateway.namespace }}
 spec:
-  gatewayClassName: eg
+  gatewayClassName: {{ .Values.gateway.namespace }}-gateway-class
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: {{ .Values.gateway.namespace }}-gateway-proxy-config
   listeners:
   - name: http
     port: 80
     protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            {{- toYaml .Values.gateway.routeNamespaceSelector | nindent 12 }}
   - name: https
     port: 443
     protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            {{- toYaml .Values.gateway.routeNamespaceSelector | nindent 12 }}
     tls:
       mode: Terminate
       certificateRefs:
       - kind: Secret
-        name: tls
+        name: {{ .Values.gateway.tls.certificate }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: {{ .Values.gateway.namespace }}-gateway-proxy-config
+  namespace: {{ .Values.gateway.namespace }}
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        name: {{ .Values.gateway.namespace }}-gateway
+      envoyService:
+        name: {{ .Values.gateway.namespace }}-gateway-lb
+        type: LoadBalancer
+        annotations:
+          foo: bar
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.gateway.namespace }}-gateway-redis
+  namespace: {{ .Values.gateway.namespace }}
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - image: redis:8.2.3
+          imagePullPolicy: IfNotPresent
+          name: redis
+          resources:
+            limits:
+              cpu: 1500m
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
 ---
 apiVersion: v1
-data:
-  tls.crt: {{ .Files.Get "files/www.example.com+1.pem" | b64enc }}
-  tls.key: {{ .Files.Get "files/www.example.com+1-key.pem" | b64enc }}
-kind: Secret
+kind: Service
 metadata:
-  name: tls
-type: kubernetes.io/tls
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: BackendTLSPolicy
-metadata:
-  name: backend
+  name: {{ .Values.gateway.namespace }}-gateway-redis
+  namespace: {{ .Values.gateway.namespace }}
+  labels:
+    app: redis
+  annotations:
 spec:
-  targetRefs:
-    - group: "backend"
-      kind: Service
-      name: backend
-      sectionName: https
-  validation:
-    hostname: example.com
-    wellKnownCACertificates: "System"
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: BackendTLSPolicy
-metadata:
-  name: frontend
-spec:
-  targetRefs:
-    - group: "frontend"
-      kind: Service
-      name: frontend
-      sectionName: https
-  validation:
-    hostname: example.com
-    wellKnownCACertificates: "System"
+  ports:
+    - name: redis
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+  selector:
+    app: redis

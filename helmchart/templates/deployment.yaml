@@ -32,9 +32,9 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: HOST_API
-              value: "{{ .Values.host.api }}"
+              value: "{{ .Values.env.frontend.api }}"
             - name: HOST_SCHEME
-              value: "{{ .Values.host.scheme }}"
+              value: "{{ .Values.env.frontend.scheme }}"
           ports:
             - containerPort: 8000
 ---
@@ -72,8 +72,8 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: LOGIN_URL
-              value: "{{ .Values.auth.login_url }}"
+              value: "{{ .Values.env.backend.login_url }}"
             - name: CORS_ALLOWED_ORIGINS
-              value: "{{ join "," .Values.auth.cors_allowed_origins }}"
+              value: "{{ join "," .Values.env.backend.cors_allowed_origins }}"
           ports:
             - containerPort: 8000

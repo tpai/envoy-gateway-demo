@@ -1,7 +1,7 @@
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: jwt-auth
+  name: jwt-auth-backend
 spec:
   targetRefs:
   - group: gateway.networking.k8s.io
@@ -21,6 +21,9 @@ metadata:
   name: whitelist
 spec:
   targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: frontend
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: backend

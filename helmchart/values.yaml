@@ -5,23 +5,57 @@ gateway-helm:
       logging:
         level:
           default: debug
+      rateLimit:
+        backend:
+          type: Redis
+          redis:
+            url: eg-gateway-redis.eg.svc.cluster.local:6379
   service:
     annotations:
       lb: orbstack
 
-# Hostname for Gateway/HTTPRoute and TLS validation
-host:
-  web: "www.example.com"
-  api: "api.example.com"
-  scheme: "https"
+gateway:
+  namespace: eg
+  routeNamespaceSelector:
+    gateway: app
+  tls:
+    certificate: https-secret
 
-auth:
-  image:
-    repository: jwt-auth-app
-    tag: latest
-  issuer: "auth.example.com"
-  audience: "private-api.example.com"
-  jwt_secret: "change-me-in-prod"
-  login_url: "https://www.example.com/login"
-  cors_allowed_origins:
-    - "https://www.example.com"
+httproutes:
+  rules:
+    - name: frontend
+      hostnames: ["www.example.com"]
+      rules:
+        - matches:
+            - type: PathPrefix
+              value: /
+          backend:
+            name: frontend
+            port: 8000
+    - name: backend-private
+      hostnames: ["api.example.com"]
+      rules:
+        - matches:
+            - type: PathPrefix
+              value: /api/private
+          backend:
+            name: backend
+            port: 8000
+    - name: backend
+      hostnames: ["api.example.com"]
+      rules:
+        - matches:
+            - type: PathPrefix
+              value: /
+          backend:
+            name: backend
+            port: 8000
+
+env:
+  frontend:
+    api: "api.example.com"
+    scheme: "https"
+  backend:
+    login_url: "https://www.example.com/login"
+    cors_allowed_origins:
+      - "https://www.example.com"

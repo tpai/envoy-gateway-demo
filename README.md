@@ -4,6 +4,11 @@ A minimal example run behind Envoy Gateway showing features like TLS integration
 
 ![](screenshot.png)
 
+## Features
+- Whitelist
+- Ratelimiting
+- External authorization
+
 ## Repository Structure
 - `apps/api/`: FastAPI service with a simple health endpoint
 - `apps/web/`: Flask-based web frontend with login/private demo pages
