@@ -55,6 +55,12 @@ def verify_token(token: str) -> Optional[dict]:
 def jwt_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        # Print headers during JWT authentication
+        print("=== JWT Authentication Headers ===")
+        for header, value in request.headers:
+            print(f"{header}: {value}")
+        print("==================================")
+        
         auth = request.headers.get("Authorization", "")
         if not auth.lower().startswith("bearer "):
             # Missing token -> 401 Unauthorized instead of redirect
@@ -78,6 +84,11 @@ def public():
 @app.route("/api/private", methods=["GET"])
 @jwt_required
 def private():
+    # Print headers during JWT authentication
+    print("=== JWT Authentication Headers ===")
+    for header, value in request.headers:
+        print(f"{header}: {value}")
+    print("==================================")
     sub = getattr(request, "jwt_payload", {}).get("sub", "unknown")
     return jsonify({"message": f"Hello {sub}, this is a private endpoint."})
 
