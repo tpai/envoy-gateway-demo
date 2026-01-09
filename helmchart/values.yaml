@@ -51,6 +51,43 @@ httproutes:
             name: backend
             port: 8000
 
+securitypolicy:
+  no_auth:
+    targetRefs:
+      - frontend
+      - backend
+    whitelist:
+      clientCIDRs:
+        - 0.0.0.0/0
+  auth:
+    targetRefs:
+      - backend-private
+    backend:
+      name: backend
+      port: 8000
+      path: /api/auth?next=
+    cors:
+      allowOrigins:
+        - "https://www.example.com"
+      allowMethods:
+        - OPTIONS
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+      allowHeaders:
+        - authorization
+        - csrf-token
+        - webpage
+        - nonce
+        - content-type
+        - query-name
+        - content-disposition
+      exposeHeaders:
+        - content-disposition
+      allowCredentials: true
+
 env:
   frontend:
     api: "api.example.com"

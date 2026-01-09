@@ -1,36 +1,62 @@
+{{- $au := .Values.securitypolicy.auth -}}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: jwt-auth-backend
+  name: auth
+  namespace: {{ $.Values.namespace }}
 spec:
   targetRefs:
+{{- range $name := $au.targetRefs }}
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: backend-private
+    name: {{ $name }}
+{{- end }}
   extAuth:
     http:
       backendRefs:
-        - name: backend
-          port: 8000
-      path: /api/auth?next=
-      headersToBackend: ["Authorization"]
+        - name: {{ $au.backend.name }}
+          port: {{ $au.backend.port }}
+      path: {{ $au.backend.path | quote }}
+      headersToBackend:
+        - Authorization
+  cors:
+    allowOrigins:
+{{- range $origin := $au.cors.allowOrigins }}
+      - {{ $origin | quote }}
+{{- end }}
+    allowMethods:
+{{- range $method := $au.cors.allowMethods }}
+      - {{ $method }}
+{{- end }}
+    allowHeaders:
+{{- range $header := $au.cors.allowHeaders }}
+      - {{ $header }}
+{{- end }}
+    exposeHeaders:
+{{- range $header := $au.cors.exposeHeaders }}
+      - {{ $header }}
+{{- end }}
+    allowCredentials: {{ $au.cors.allowCredentials }}
 ---
+{{- $na := .Values.securitypolicy.no_auth -}}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: whitelist
+  name: no-auth
+  namespace: {{ $.Values.namespace }}
 spec:
   targetRefs:
+{{- range $name := $na.targetRefs }}
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: frontend
-  - group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: backend
+    name: {{ $name }}
+{{- end }}
   authorization:
     defaultAction: Deny
     rules:
     - action: Allow
       principal:
         clientCIDRs:
-        - 192.168.194.1/32
+{{- range $cidr := $na.whitelist.clientCIDRs }}
+        - {{ $cidr | quote }}
+{{- end }}
